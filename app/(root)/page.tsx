@@ -1,7 +1,9 @@
-import React from "react";
-
 const Page = () => {
-  return <div className="">Page</div>;
+  return (
+    <div className="">
+      <h1 className="text-3xl font-bold">Screen Recorder and Share</h1>
+    </div>
+  );
 };
 
 export default Page;
