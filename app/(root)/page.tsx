@@ -1,8 +1,10 @@
+import Header from "@/components/Header";
+
 const Page = () => {
   return (
-    <div className="">
-      <h1 className="text-3xl font-bold">Screen Recorder and Share</h1>
-    </div>
+    <main className="wrapper page">
+      <Header title="All Videos" subHeader="Public Library" />
+    </main>
   );
 };
 
