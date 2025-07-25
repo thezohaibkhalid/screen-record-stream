@@ -20,3 +20,10 @@ export class XataClient extends DatabaseClient<DatabaseSchema> {
 }
 
 let instance: XataClient | undefined = undefined;
+
+export const getXataClient = () => {
+  if (instance) return instance;
+
+  instance = new XataClient();
+  return instance;
+};
