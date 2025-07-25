@@ -1,0 +1,6 @@
+{
+  "databaseURL": "https://Zohaib-Khalid-s-workspace-jheaee.eu-central-1.xata.sh/db/BitRecord",
+  "codegen": {
+    "output": "src/xata.ts"
+  }
+}

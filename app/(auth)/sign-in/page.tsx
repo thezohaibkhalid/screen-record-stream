@@ -59,7 +59,7 @@ const SignIn = () => {
           <Link href="/">
             <Image
               src="/assets/icons/logo.svg"
-              alt="SnapChat Logo"
+              alt="BitRecord Logo"
               width={40}
               height={40}
             />
