@@ -54,7 +54,7 @@ export const dummyCards = [
     title: "SnapChat Message",
     thumbnail: "/assets/samples/thumbnail (1).png",
     createdAt: new Date("2025-05-01"),
-    userImg: "/assets/images/jason.png",
+    userImg: "/assets/images/zohaib.png",
     username: "Jason",
     views: 10,
     visibility: "public",

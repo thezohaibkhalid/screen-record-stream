@@ -7,7 +7,7 @@ const Page = () => {
       title: "Understanding React Hooks",
       thumbnail: "/assets/samples/thumbnail (1).png",
       createdAt: new Date("2025-05-01 12:00:00"),
-      userImg: "/assets/images/jason.png",
+      userImg: "/assets/images/zohaib.png",
       username: "Jason",
       views: 100,
       duration: 3000,
@@ -100,7 +100,7 @@ const Page = () => {
         title="Understanding React Hooks"
         thumbnail="/assets/samples/thumbnail (1).png"
         createdAt={new Date("2025-05-01 12:00:00")}
-        userImg="/assets/images/jason.png"
+        userImg="/assets/images/zohaib.png"
         username="Jason"
         views={100}
         duration={3000}
@@ -109,7 +109,7 @@ const Page = () => {
 
       <section className="video-grid">
         {videos.map((video) => (
-          <VideoCard {...video} />
+          <VideoCard key={video.id} {...video} />
         ))}
       </section>
     </main>
