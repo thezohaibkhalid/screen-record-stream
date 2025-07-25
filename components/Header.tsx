@@ -2,44 +2,63 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ICONS } from "@/constants/index";
+import DropdownList from "@/components/DropdownList"
 const Header = ({ subHeader, title, userImg }: SharedHeaderProps) => {
   return (
-    <header>
-      <section className="header-container">
+    <header className={"header"}>
+      <section className={"header-container"}>
         <div className="details">
           {userImg && (
             <Image
-              src={userImg || "/asstes/images/dummy.jpg"}
-              alt="User Image"
+              src={userImg}
+              alt={"user"}
               width={66}
               height={66}
-              className="rounded-full"
+              className={"rounded-full"}
             />
           )}
-          <article className="article">
+
+          <article>
             <p>{subHeader}</p>
-            <h1>{title}</h1>
+            <p>{title}</p>
           </article>
         </div>
         <aside>
           <Link href={"/upload"}>
             <Image
-              src="/assets/icons/upload.svg"
-              alt="Upload Icon"
-              height={16}
+              src={"/assets/icons/upload.svg"}
+              alt={"upload"}
               width={16}
+              height={16}
             />
-            <span>Upload a Video</span>
+            <span>Upload a video</span>
           </Link>
           <div className="record">
             <button className="primary-btn">
               <Image src={ICONS.record} alt="Record" width={16} height={16} />
+              <span>Record a video</span>
             </button>
           </div>
         </aside>
       </section>
+      <section className="search-filter">
+        <div className="search">
+          <input
+            type="text"
+            name="search"
+            id="search"
+            placeholder={"Search for videos, tags, folders..."}
+          />
+          <Image
+            src={"/assets/icons/search.svg"}
+            alt={"search"}
+            width={16}
+            height={16}
+          />
+        </div>
+        <DropdownList />
+      </section>
     </header>
   );
 };
-
 export default Header;
