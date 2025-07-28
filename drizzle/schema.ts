@@ -5,7 +5,6 @@ import {
   boolean,
   uuid,
   integer,
-  jsonb,
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {

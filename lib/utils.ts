@@ -1,7 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { ilike, sql } from "drizzle-orm";
-// import { videos } from "@/drizzle/schema";
+import { videos } from "@/drizzle/schema";
 import { DEFAULT_VIDEO_CONFIG, DEFAULT_RECORDING_CONFIG } from "@/constants";
 
 export function cn(...inputs: ClassValue[]) {
@@ -9,9 +9,9 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const updateURLParams = (
-  currentParams: URLSearchParams,
-  updates: Record<string, string | null | undefined>,
-  basePath: string = "/"
+    currentParams: URLSearchParams,
+    updates: Record<string, string | null | undefined>,
+    basePath: string = "/"
 ): string => {
   const params = new URLSearchParams(currentParams.toString());
 
@@ -36,9 +36,11 @@ export const getEnv = (key: string): string => {
 
 // API fetch helper with required Bunny CDN options
 export const apiFetch = async <T = Record<string, unknown>>(
-    url: string, options: Omit<ApiFetchOptions, "bunnyType"> & {
-        bunnyType: "stream" | "storage";
-    }, p0: string, bynnyType: any, p1: string, body: any, p2: { title: string; description: string; }): Promise<T> => {
+    url: string,
+    options: Omit<ApiFetchOptions, "bunnyType"> & {
+      bunnyType: "stream" | "storage";
+    }
+): Promise<T> => {
   const {
     method = "GET",
     headers = {},
@@ -48,9 +50,9 @@ export const apiFetch = async <T = Record<string, unknown>>(
   } = options;
 
   const key = getEnv(
-    bunnyType === "stream"
-      ? "BUNNY_STREAM_ACCESS_KEY"
-      : "BUNNY_STORAGE_ACCESS_KEY"
+      bunnyType === "stream"
+          ? "BUNNY_STREAM_ACCESS_KEY"
+          : "BUNNY_STORAGE_ACCESS_KEY"
   );
 
   const requestHeaders = {
@@ -83,7 +85,7 @@ export const apiFetch = async <T = Record<string, unknown>>(
 
 // Higher order function to handle errors
 export const withErrorHandling = <T, A extends unknown[]>(
-  fn: (...args: A) => Promise<T>
+    fn: (...args: A) => Promise<T>
 ) => {
   return async (...args: A): Promise<T> => {
     try {
@@ -91,25 +93,25 @@ export const withErrorHandling = <T, A extends unknown[]>(
       return result;
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : "Unknown error occurred";
+          error instanceof Error ? error.message : "Unknown error occurred";
       return errorMessage as unknown as T;
     }
   };
 };
 
-// export const getOrderByClause = (filter?: string) => {
-//   switch (filter) {
-//     case "Most Viewed":
-//       return sql`${videos.views} DESC`;
-//     case "Least Viewed":
-//       return sql`${videos.views} ASC`;
-//     case "Oldest First":
-//       return sql`${videos.createdAt} ASC`;
-//     case "Most Recent":
-//     default:
-//       return sql`${videos.createdAt} DESC`;
-//   }
-// };
+export const getOrderByClause = (filter?: string) => {
+  switch (filter) {
+    case "Most Viewed":
+      return sql`${videos.views} DESC`;
+    case "Least Viewed":
+      return sql`${videos.views} ASC`;
+    case "Oldest First":
+      return sql`${videos.createdAt} ASC`;
+    case "Most Recent":
+    default:
+      return sql`${videos.createdAt} DESC`;
+  }
+};
 
 export const generatePagination = (currentPage: number, totalPages: number) => {
   if (totalPages <= 7) {
@@ -141,7 +143,7 @@ export const generatePagination = (currentPage: number, totalPages: number) => {
 };
 
 export const getMediaStreams = async (
-  withMic: boolean
+    withMic: boolean
 ): Promise<MediaStreams> => {
   const displayStream = await navigator.mediaDevices.getDisplayMedia({
     video: DEFAULT_VIDEO_CONFIG,
@@ -154,18 +156,18 @@ export const getMediaStreams = async (
   if (withMic) {
     micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     micStream
-      .getAudioTracks()
-      .forEach((track: MediaStreamTrack) => (track.enabled = true));
+        .getAudioTracks()
+        .forEach((track: MediaStreamTrack) => (track.enabled = true));
   }
 
   return { displayStream, micStream, hasDisplayAudio };
 };
 
 export const createAudioMixer = (
-  ctx: AudioContext,
-  displayStream: MediaStream,
-  micStream: MediaStream | null,
-  hasDisplayAudio: boolean
+    ctx: AudioContext,
+    displayStream: MediaStream,
+    micStream: MediaStream | null,
+    hasDisplayAudio: boolean
 ) => {
   if (!hasDisplayAudio && !micStream) return null;
 
@@ -192,27 +194,27 @@ export const setupMediaRecorder = (stream: MediaStream) => {
 };
 
 export const getVideoDuration = (url: string): Promise<number | null> =>
-  new Promise((resolve) => {
-    const video = document.createElement("video");
-    video.preload = "metadata";
-    video.onloadedmetadata = () => {
-      const duration =
-        isFinite(video.duration) && video.duration > 0
-          ? Math.round(video.duration)
-          : null;
-      URL.revokeObjectURL(video.src);
-      resolve(duration);
-    };
-    video.onerror = () => {
-      URL.revokeObjectURL(video.src);
-      resolve(null);
-    };
-    video.src = url;
-  });
+    new Promise((resolve) => {
+      const video = document.createElement("video");
+      video.preload = "metadata";
+      video.onloadedmetadata = () => {
+        const duration =
+            isFinite(video.duration) && video.duration > 0
+                ? Math.round(video.duration)
+                : null;
+        URL.revokeObjectURL(video.src);
+        resolve(duration);
+      };
+      video.onerror = () => {
+        URL.revokeObjectURL(video.src);
+        resolve(null);
+      };
+      video.src = url;
+    });
 
 export const setupRecording = (
-  stream: MediaStream,
-  handlers: RecordingHandlers
+    stream: MediaStream,
+    handlers: RecordingHandlers
 ): MediaRecorder => {
   const recorder = new MediaRecorder(stream, DEFAULT_RECORDING_CONFIG);
   recorder.ondataavailable = handlers.onDataAvailable;
@@ -221,9 +223,9 @@ export const setupRecording = (
 };
 
 export const cleanupRecording = (
-  recorder: MediaRecorder | null,
-  stream: MediaStream | null,
-  originalStreams: MediaStream[] = []
+    recorder: MediaRecorder | null,
+    stream: MediaStream | null,
+    originalStreams: MediaStream[] = []
 ) => {
   if (recorder?.state !== "inactive") {
     recorder?.stop();
@@ -231,12 +233,12 @@ export const cleanupRecording = (
 
   stream?.getTracks().forEach((track: MediaStreamTrack) => track.stop());
   originalStreams.forEach((s) =>
-    s.getTracks().forEach((track: MediaStreamTrack) => track.stop())
+      s.getTracks().forEach((track: MediaStreamTrack) => track.stop())
   );
 };
 
 export const createRecordingBlob = (
-  chunks: Blob[]
+    chunks: Blob[]
 ): { blob: Blob; url: string } => {
   const blob = new Blob(chunks, { type: "video/webm" });
   const url = URL.createObjectURL(blob);
@@ -244,7 +246,7 @@ export const createRecordingBlob = (
 };
 
 export const calculateRecordingDuration = (startTime: number | null): number =>
-  startTime ? Math.round((Date.now() - startTime) / 1000) : 0;
+    startTime ? Math.round((Date.now() - startTime) / 1000) : 0;
 
 export function parseTranscript(transcript: string): TranscriptEntry[] {
   const lines = transcript.replace(/^WEBVTT\s*/, "").split("\n");
@@ -255,7 +257,7 @@ export function parseTranscript(transcript: string): TranscriptEntry[] {
   for (const line of lines) {
     const trimmedLine = line.trim();
     const timeMatch = trimmedLine.match(
-      /(\d{2}:\d{2}:\d{2})\.\d{3}\s-->\s(\d{2}:\d{2}:\d{2})\.\d{3}/
+        /(\d{2}:\d{2}:\d{2})\.\d{3}\s-->\s(\d{2}:\d{2}:\d{2})\.\d{3}/
     );
 
     if (timeMatch) {
@@ -299,11 +301,11 @@ export function daysAgo(inputDate: Date): string {
 }
 
 export const createIframeLink = (videoId: string) =>
-  `https://iframe.mediadelivery.net/embed/421422/${videoId}?autoplay=true&preload=true`;
+    `https://iframe.mediadelivery.net/embed/421422/${videoId}?autoplay=true&preload=true`;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const doesTitleMatch = (videos: any, searchQuery: string) =>
-  ilike(
-    sql`REPLACE(REPLACE(REPLACE(LOWER(${videos.title}), '-', ''), '.', ''), ' ', '')`,
-    `%${searchQuery.replace(/[-. ]/g, "").toLowerCase()}%`
-  );
+    ilike(
+        sql`REPLACE(REPLACE(REPLACE(LOWER(${videos.title}), '-', ''), '.', ''), ' ', '')`,
+        `%${searchQuery.replace(/[-. ]/g, "").toLowerCase()}%`
+    );
