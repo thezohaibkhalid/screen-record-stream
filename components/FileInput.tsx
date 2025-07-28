@@ -35,7 +35,7 @@ const FileInput = ({
       ) : (
         <div>
           {type === "video" ? (
-            <video src={previewUrl} controls width={250} />
+            <video src={previewUrl} controls  />
           ) : (
             <Image src={previewUrl} alt="Preview Image" fill />
           )}

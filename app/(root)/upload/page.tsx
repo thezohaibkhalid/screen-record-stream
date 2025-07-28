@@ -4,8 +4,9 @@ import FormField from "@/components/FormField";
 import FileInput from "@/components/FileInput";
 import { useFileInput } from "@/lib/hooks/useFileInput";
 import { MAX_THUMBNAIL_SIZE, MAX_VIDEO_SIZE } from "@/constants";
+import { captureRejectionSymbol } from "events";
 const page = () => {
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>('');
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -14,18 +15,42 @@ const page = () => {
     // thumbnail: null,
     // videoFile: null,
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const video = useFileInput(MAX_VIDEO_SIZE);
   const thumbnail = useFileInput(MAX_THUMBNAIL_SIZE);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+        if(!video.file || !thumbnail.file) {
+          setError("Please upload both video and thumbnail files.");
+          setIsSubmitting(false);
+          return;
+        }
+        if(!formData.title || !formData.description) {
+          setError("Title and description are required.");
+          setIsSubmitting(false);
+          return;
+        }
+        setError(null);
+    } catch (error) {
+      console.error("Error uploading video:", error);
+      setError("Failed to upload video. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   return (
     <div className="wrapper-md page upload-page">
       <h1>Upload a Video</h1>
       {error && <div className="error-field">{error}</div>}
       <form
-        action=""
+        onSubmit={handleSubmit}
         className="rounded-20 shadow-10 gap-6 w-full flex flex-col px-5 py-7.5"
       >
         <FormField
@@ -78,6 +103,9 @@ const page = () => {
           ]}
           as="select"
         />
+        <button type="submit" className="submit-button" disabled={isSubmitting}>
+          {isSubmitting ? "Uploading..." : "Upload Video"}
+        </button>
       </form>
     </div>
   );
