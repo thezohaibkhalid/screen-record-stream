@@ -7,11 +7,9 @@ import { authClient } from "@/lib/auth-client";
 
 const SignIn = () => {
   const handleSignIn = async () => {
-    async () => {
-      return await authClient.signIn.social({
-        provider: "google",
-      });
-    };
+    await authClient.signIn.social({
+      provider: "google",
+    });
   };
 
   return (
