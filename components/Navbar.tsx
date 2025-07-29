@@ -2,7 +2,9 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, redirect } from "next/navigation";
+import {authClient} from "@/lib/auth-client";
+
 const Navbar = () => {
   const user = {};
   const router = useRouter();
@@ -32,7 +34,17 @@ const Navbar = () => {
                 }}
               />
             </button>
-            <button className="cursor-pointer ">
+            <button className="cursor-pointer "
+                    onClick={async () => {
+                      return await authClient.signOut({
+                        fetchOptions: {
+                          onSuccess: () => {
+                            redirect("/sign-in");
+                          },
+                        },
+                      });
+                    }}
+            >
               <Image
                 src="/assets/icons/logout.svg"
                 alt="Logout Icon"

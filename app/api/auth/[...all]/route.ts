@@ -49,8 +49,9 @@ export const POST = async(req: NextRequest) => {
         if(decision.reason.isRateLimit()){
             throw new Error("Rate limit Exceeded");
         }
-        if(decision.reason.isShield()){
+        if(decision.reason.isShield()) {
             throw new Error("Shield Turned On protected against Malicious Actions");
         }
     }
+    return authHandlers.POST(req);
 }
