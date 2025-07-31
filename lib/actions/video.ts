@@ -1,14 +1,14 @@
 "use server"
 import { auth } from "@/lib/auth";
-import { apiFetch, getEnv, withErrorHandling } from "../utils"
+import {apiFetch, doesTitleMatch, getEnv, getOrderByClause, withErrorHandling} from "../utils"
 import { headers } from "next/headers";
 import { BUNNY } from "@/constants";
 import {db} from "@/drizzle/db"
 import {videos} from "@/drizzle/schema";
 import {revalidatePath} from "next/cache";
 import aj , {fixedWindow, request} from "@/lib/arcjet"
-
-
+import {or, eq, and, sql} from "drizzle-orm"
+import {user} from "@/drizzle/schema"
 
 const VIDEO_STREAM_BASE_URL = BUNNY.STREAM_BASE_URL
 const THUMBNAIL_STORAGE_BASE_URL = BUNNY.STORAGE_BASE_URL;
@@ -33,7 +33,7 @@ const revalidatePaths = (paths: string[]) => {
 }
 
 //reusable validator funciton to rate limit some of our server actions
-//to protect from spaming or tem Mails (do not allow more then 2 videos in a minute for example)
+//to protect from spaming or tem Mails (do not allow more then 2 videos in a minute for example)vi
 const validateWithArcjet = async (fingerPrint: string) => {
     const rateLimit = aj.withRule(
         fixedWindow({
@@ -49,6 +49,18 @@ const validateWithArcjet = async (fingerPrint: string) => {
         throw new Error("Rate Limit Exceeded");
     }
 };
+const buildVideoWithUserQuery = ()=>{
+    return db.select({
+        video:videos,
+        user:{id:user.id, name:user.name,image:user.image}
+    })
+        .from(videos)
+        .leftJoin(user,eq(videos.userId, user.id))
+}
+
+
+
+
 
 //server functino
 export const getVideoUploadUrl = withErrorHandling(async()=>{
@@ -103,3 +115,49 @@ export const saveVideoDetails = withErrorHandling(async(videoDetails:VideoDetail
     revalidatePaths(['/'])
     return {videoId:videoDetails.videoId}
 })
+
+
+export const getAllVideos = withErrorHandling(async(
+    searchQuery: string = '',
+    sortFilter: string,
+    pageNumber: number = 1,
+    pageSize: number = 10,
+)=>{
+    const session = await auth.api.getSession({headers: await headers()});
+    const currentUserId  = session?.user.id;
+    const canSeeTheVideos = or(
+        eq(videos.visibility, 'public'),
+        eq(videos.userId, currentUserId!),
+    );
+
+    const whereCondition = searchQuery.trim()
+    ? and(canSeeTheVideos, doesTitleMatch(videos, searchQuery),)
+        :canSeeTheVideos;
+
+    const [{totalCount}] = await db
+        .select({totalCount:sql`count(*)`})
+        .from(videos).where(whereCondition);
+
+    const totalVideos = Number(totalCount);
+    const totalPages = Math.ceil(totalVideos/pageSize)
+    // Fetch paginated, sorted results
+    const videoRecords = await buildVideoWithUserQuery()
+        .where(whereCondition)
+        .orderBy(
+            sortFilter
+                ? getOrderByClause(sortFilter)
+                : sql`${videos.createdAt} DESC`
+        )
+        .limit(pageSize)
+        .offset((pageNumber - 1) * pageSize);
+        return {
+            videos: videoRecords,
+            pagination: {
+                currentPage: pageNumber,
+                totalPages,
+                totalVideos,
+                pageSize,
+            },
+        };
+    }
+);
