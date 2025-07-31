@@ -1,40 +1,39 @@
 "use client";
-import React from "react";
-import Link from "next/link";
 import Image from "next/image";
-import { useRouter, redirect } from "next/navigation";
-import {authClient} from "@/lib/auth-client";
+import Link from "next/link";
+import { redirect, useRouter } from "next/navigation";
 
+import { authClient } from "@/lib/auth-client";
 const Navbar = () => {
-  const user = {};
   const router = useRouter();
+  const { data: session } = authClient.useSession();
+  const user = session?.user;
+
   return (
-    <header className="navbar">
-      <nav>
-        <Link href={"/"}>
-          <Image
-            src="/assets/icons/logo.svg"
-            alt="BitRecord Logo"
-            width={32}
-            height={32}
-          />
-          <h1>BitRecord</h1>
-        </Link>
-        {user && (
-          <figure>
-            <button>
-              <Image
-                src="/assets/images/dummy.jpg"
-                alt="User Avatar"
-                width={36}
-                height={36}
-                className="rounded-full aspect-square "
-                onClick={() => {
-                  router.push(`/profile/123456`);
-                }}
-              />
-            </button>
-            <button className="cursor-pointer "
+      <header className="navbar">
+        <nav>
+          <Link href="/">
+            <Image
+                src="/assets/icons/logo.svg"
+                alt="SnapChat Logo"
+                width={32}
+                height={32}
+            />
+            <h1>SnapCast</h1>
+          </Link>
+
+          {user && (
+              <figure>
+                <button onClick={() => router.push(`/profile/${session?.user.id}`)}>
+                  <Image
+                      src={session?.user.image ?? ""}
+                      alt="User"
+                      width={36}
+                      height={36}
+                      className="rounded-full aspect-square"
+                  />
+                </button>
+                <button
                     onClick={async () => {
                       return await authClient.signOut({
                         fetchOptions: {
@@ -44,19 +43,20 @@ const Navbar = () => {
                         },
                       });
                     }}
-            >
-              <Image
-                src="/assets/icons/logout.svg"
-                alt="Logout Icon"
-                width={24}
-                height={24}
-                className="rotate-180 "
-              />
-            </button>
-          </figure>
-        )}
-      </nav>
-    </header>
+                    className="cursor-pointer"
+                >
+                  <Image
+                      src="/assets/icons/logout.svg"
+                      alt="logout"
+                      width={24}
+                      height={24}
+                      className="rotate-180"
+                  />
+                </button>
+              </figure>
+          )}
+        </nav>
+      </header>
   );
 };
 
