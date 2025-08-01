@@ -13,6 +13,7 @@ const VideoCard = ({
   duration,
   visibility,
 }: VideoCardProps) => {
+
   return (
     <Link href={`/video/${id}`} className="video-card">
       <Image

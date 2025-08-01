@@ -1,14 +1,15 @@
-"use server"
-import { auth } from "@/lib/auth";
-import {apiFetch, doesTitleMatch, getEnv, getOrderByClause, withErrorHandling} from "../utils"
+"use server";
+
+import { db } from "@/drizzle/db";
+import { videos, user } from "@/drizzle/schema";
 import { headers } from "next/headers";
+import { revalidatePath } from "next/cache";
+import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { auth } from "@/lib/auth";
+import {apiFetch, doesTitleMatch, getEnv, getOrderByClause, withErrorHandling} from "@/lib/utils";
 import { BUNNY } from "@/constants";
-import {db} from "@/drizzle/db"
-import {videos} from "@/drizzle/schema";
-import {revalidatePath} from "next/cache";
-import aj , {fixedWindow, request} from "@/lib/arcjet"
-import {or, eq, and, sql} from "drizzle-orm"
-import {user} from "@/drizzle/schema"
+import aj, { fixedWindow, request } from "../arcjet";
+
 
 const VIDEO_STREAM_BASE_URL = BUNNY.STREAM_BASE_URL
 const THUMBNAIL_STORAGE_BASE_URL = BUNNY.STORAGE_BASE_URL;
@@ -19,7 +20,7 @@ const ACCESS_KEYS = {
     storageAccessKey: getEnv("BUNNY_STORAGE_ACCESS_KEY"),
 }
 
-//Helper funcitons 
+//Helper funcitons
 const getSessionUserId = async (): Promise<string> => {
     const session = await auth.api.getSession({headers: await headers()});
     if (!session ) throw new Error("User not authenticated");
@@ -52,7 +53,7 @@ const validateWithArcjet = async (fingerPrint: string) => {
 const buildVideoWithUserQuery = ()=>{
     return db.select({
         video:videos,
-        user:{id:user.id, name:user.name,image:user.image}
+        user:{id:user.id, name:user.name,image:user.image},
     })
         .from(videos)
         .leftJoin(user,eq(videos.userId, user.id))
@@ -168,3 +169,72 @@ export const getVideoById = withErrorHandling(async (videoId: string) => {
     );
     return videoRecord;
 });
+
+
+
+export const getAllVideosByUser = withErrorHandling(
+    async (
+        userIdParameter: string,
+        searchQuery: string = "",
+        sortFilter?: string
+    ) => {
+        const currentUserId = (
+            await auth.api.getSession({ headers: await headers() })
+        )?.user.id;
+        const isOwner = userIdParameter === currentUserId;
+
+        const [userInfo] = await db
+            .select({
+                id: user.id,
+                name: user.name,
+                image: user.image,
+                email: user.email,
+            })
+            .from(user)
+            .where(eq(user.id, userIdParameter));
+        if (!userInfo) throw new Error("User not found");
+
+        /* eslint-disable @typescript-eslint/no-explicit-any */
+        const conditions = [
+            eq(videos.userId, userIdParameter),
+            !isOwner && eq(videos.visibility, "public"),
+            searchQuery.trim() && ilike(videos.title, `%${searchQuery}%`),
+        ].filter(Boolean) as any[];
+
+        const userVideos = await buildVideoWithUserQuery()
+            .where(and(...conditions))
+            .orderBy(
+                sortFilter ? getOrderByClause(sortFilter) : desc(videos.createdAt)
+            );
+
+        return { user: userInfo, videos: userVideos, count: userVideos.length };
+    }
+);
+
+export const incrementVideoViews = withErrorHandling(
+    async (videoId: string) => {
+        await db
+            .update(videos)
+            .set({ views: sql`${videos.views} + 1`, updatedAt: new Date() })
+            .where(eq(videos.videoId, videoId));
+
+        revalidatePaths([`/video/${videoId}`]);
+        return {};
+    }
+);
+
+
+export const getVideoProcessingStatus = withErrorHandling(
+    async (videoId: string) => {
+        const processingInfo = await apiFetch<BunnyVideoResponse>(
+            `${VIDEO_STREAM_BASE_URL}/${BUNNY_LIBRARY_ID}/videos/${videoId}`,
+            { bunnyType: "stream" }
+        );
+
+        return {
+            isProcessed: processingInfo.status === 4,
+            encodingProgress: processingInfo.encodeProgress || 0,
+            status: processingInfo.status,
+        };
+    }
+);
