@@ -10,7 +10,7 @@ const page = async ({params}:Params) => {
   const {user, video } = await getVideoById(videoId);
 
   if(!video) redirect('/404')
-  return <main>
+  return <main className="page wrapper">
     <VideoDetailHeader {...video} userImg={user?.image} username={user?.name} ownerId={video.userId}/>
 
     <section className="video-details">
