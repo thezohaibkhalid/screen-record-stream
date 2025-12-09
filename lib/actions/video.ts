@@ -108,6 +108,7 @@ export const saveVideoDetails = withErrorHandling(async(videoDetails:VideoDetail
     )
     await db.insert(videos).values({
         ...videoDetails,
+        visibility: videoDetails.visibility as "public" | "private",
         videoUrl: `${BUNNY.EMBED_URL}/${BUNNY_VIDEO_LIBRARY_ID}/${videoDetails.videoId}`,
         userId,
         createdAt: new Date(),
@@ -227,7 +228,7 @@ export const incrementVideoViews = withErrorHandling(
 export const getVideoProcessingStatus = withErrorHandling(
     async (videoId: string) => {
         const processingInfo = await apiFetch<BunnyVideoResponse>(
-            `${VIDEO_STREAM_BASE_URL}/${BUNNY_LIBRARY_ID}/videos/${videoId}`,
+            `${VIDEO_STREAM_BASE_URL}/${BUNNY_VIDEO_LIBRARY_ID}/videos/${videoId}`,
             { bunnyType: "stream" }
         );
 

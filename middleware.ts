@@ -1,17 +1,19 @@
-import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import aj, {detectBot, shield} from "@/lib/arcjet"
 import {createMiddleware} from "@arcjet/next";
 
 export async function middleware(request: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-    if (!session) {
-        return NextResponse.redirect(new URL("/sign-in", request.url));
-    }
-    return NextResponse.next();
+  // Check for better-auth session cookie (Edge Runtime compatible)
+  // Better-auth typically uses "better-auth.session_token" as the cookie name
+  const sessionToken = 
+    request.cookies.get("better-auth.session_token") ||
+    request.cookies.get("session_token");
+  
+  if (!sessionToken) {
+    return NextResponse.redirect(new URL("/sign-in", request.url));
+  }
+  
+  return NextResponse.next();
 }
 const validate = aj
     .withRule(shield({
