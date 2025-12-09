@@ -1,0 +1,71 @@
+name: Deploy to EC2 via SSH
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        env:
+          SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          install -m 600 /dev/null ~/.ssh/id_ed25519
+          echo "$SSH_KEY" > ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy on EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          DATABASE_URL_POSTGRES: ${{ secrets.DATABASE_URL_POSTGRES }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL }}
+          ARCJET_API_KEY: ${{ secrets.ARCJET_API_KEY }}
+          XATA_API_KEY: ${{ secrets.XATA_API_KEY }}
+          BUNNY_VIDEO_LIBRARY_ID: ${{ secrets.BUNNY_VIDEO_LIBRARY_ID }}
+          BUNNY_STREAM_ACCESS_KEY: ${{ secrets.BUNNY_STREAM_ACCESS_KEY }}
+          BUNNY_STORAGE_ACCESS_KEY: ${{ secrets.BUNNY_STORAGE_ACCESS_KEY }}
+        run: |
+          ssh $EC2_USER@$EC2_HOST <<EOF
+            set -e
+            cd ~/screen-record-stream || git clone https://github.com/${GITHUB_REPOSITORY}.git ~/screen-record-stream && cd ~/screen-record-stream
+            git fetch origin
+            git checkout main
+            git reset --hard origin/main
+
+            cat <<ENVVARS > .env
+DATABASE_URL_POSTGRES=${DATABASE_URL_POSTGRES}
+GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
+ARCJET_API_KEY=${ARCJET_API_KEY}
+XATA_API_KEY=${XATA_API_KEY}
+BUNNY_VIDEO_LIBRARY_ID=${BUNNY_VIDEO_LIBRARY_ID}
+BUNNY_STREAM_ACCESS_KEY=${BUNNY_STREAM_ACCESS_KEY}
+BUNNY_STORAGE_ACCESS_KEY=${BUNNY_STORAGE_ACCESS_KEY}
+ENVVARS
+
+            docker compose down
+            docker compose build --pull
+            docker compose up -d
+
+            for i in {1..10}; do
+              if curl -fsS http://localhost:5000/ > /dev/null; then
+                echo "App is healthy"
+                exit 0
+              fi
+              echo "Waiting for app to be ready... ($i/10)"
+              sleep 5
+            done
+            echo "Health check failed" >&2
+            docker compose logs
+            exit 1
+          EOF

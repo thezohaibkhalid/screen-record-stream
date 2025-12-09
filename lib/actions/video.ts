@@ -127,10 +127,10 @@ export const getAllVideos = withErrorHandling(async(
 )=>{
     const session = await auth.api.getSession({headers: await headers()});
     const currentUserId  = session?.user.id;
-    const canSeeTheVideos = or(
-        eq(videos.visibility, 'public'),
-        eq(videos.userId, currentUserId!),
-    );
+
+    const canSeeTheVideos = currentUserId
+        ? or(eq(videos.visibility, 'public'), eq(videos.userId, currentUserId))
+        : eq(videos.visibility, 'public');
 
     const whereCondition = searchQuery.trim()
     ? and(canSeeTheVideos, doesTitleMatch(videos, searchQuery),)
